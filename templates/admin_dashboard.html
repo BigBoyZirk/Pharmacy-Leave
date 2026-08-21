@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Admin dashboard{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div>
+    <h1 class="h3 mb-0">Leave dashboard</h1>
+    <p class="text-muted mb-0">All staff. Click a booking to approve, reject, move, or cancel.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addLeaveModal">Add leave</button>
+    <a class="btn btn-teal" href="{{ url_for('admin_export') }}">Export CSV</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div id="admin-calendar"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h2 class="h5">Pending requests</h2>
+        {% if pending %}
+          {% for item in pending %}
+            <div class="border rounded p-3 mb-2">
+              <div class="fw-medium">{{ item.user.name }}</div>
+              <div class="small">{{ item.start_date.strftime('%d %b %Y') }}
+                {% if item.end_date != item.start_date %}– {{ item.end_date.strftime('%d %b %Y') }}{% endif %}
+                ({{ item.day_count() }} day(s))
+              </div>
+              {% if item.staff_note %}<div class="small text-muted">{{ item.staff_note }}</div>{% endif %}
+              <div class="mt-2 d-flex gap-2">
+                <button class="btn btn-sm btn-success decide-leave" data-id="{{ item.id }}" data-decision="approved">Approve</button>
+                <button class="btn btn-sm btn-outline-danger decide-leave" data-id="{{ item.id }}" data-decision="rejected">Reject</button>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted mb-0">Nothing waiting.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h2 class="h5">{{ year }} overview</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr><th>Staff</th><th>Booked</th><th>Left</th></tr>
+            </thead>
+            <tbody>
+              {% for row in overview %}
+                <tr>
+                  <td>
+                    <span class="colour-dot" style="background:{{ row.staff.colour }}"></span>
+                    {{ row.staff.name }}
+                  </td>
+                  <td>{{ row.booked }} / {{ row.staff.annual_allowance }}</td>
+                  <td>{{ row.remaining }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5">Add staff</h2>
+        <form method="post" action="{{ url_for('admin_add_staff') }}">
+          <div class="mb-2">
+            <label class="form-label" for="name">Name</label>
+            <input class="form-control" id="name" name="name" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label" for="pin">4-digit PIN</label>
+            <input class="form-control" id="pin" name="pin" maxlength="4" pattern="[0-9]{4}" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label" for="email">Email (optional)</label>
+            <input class="form-control" id="email" name="email" type="email">
+          </div>
+          <div class="mb-2">
+            <label class="form-label" for="annual_allowance">Annual days</label>
+            <input class="form-control" id="annual_allowance" name="annual_allowance" type="number" value="28" min="0">
+          </div>
+          <button class="btn btn-outline-teal w-100" type="submit">Add staff member</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="addLeaveModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form class="modal-content" id="manual-leave-form">
+      <div class="modal-header">
+        <h2 class="modal-title h5">Add approved leave</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label" for="manual-user">Staff</label>
+          <select class="form-select" id="manual-user" required>
+            {% for member in staff %}
+              <option value="{{ member.id }}">{{ member.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="row">
+          <div class="col-6 mb-2">
+            <label class="form-label" for="manual-start">Start</label>
+            <input class="form-control" id="manual-start" type="date" required>
+          </div>
+          <div class="col-6 mb-2">
+            <label class="form-label" for="manual-end">End</label>
+            <input class="form-control" id="manual-end" type="date" required>
+          </div>
+        </div>
+        <label class="form-label" for="manual-note">Note</label>
+        <textarea class="form-control" id="manual-note" rows="2" placeholder="Emergency cover, pre-approved, etc."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-teal" type="submit">Save leave</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="editLeaveModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form class="modal-content" id="edit-leave-form">
+      <div class="modal-header">
+        <h2 class="modal-title h5">Leave details</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2" id="edit-leave-who"></p>
+        <input type="hidden" id="edit-leave-id">
+        <div class="row">
+          <div class="col-6 mb-2">
+            <label class="form-label" for="edit-start">Start</label>
+            <input class="form-control" id="edit-start" type="date" required>
+          </div>
+          <div class="col-6 mb-2">
+            <label class="form-label" for="edit-end">End</label>
+            <input class="form-control" id="edit-end" type="date" required>
+          </div>
+        </div>
+        <label class="form-label" for="edit-note">Note (required when moving or cancelling)</label>
+        <textarea class="form-control" id="edit-note" rows="2" required></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-danger" type="button" id="cancel-leave-admin">Cancel leave</button>
+        <button class="btn btn-teal" type="submit">Save move</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

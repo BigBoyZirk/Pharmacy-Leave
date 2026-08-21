@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}My leave{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+  <div>
+    <h1 class="h3 mb-1">Hello, {{ current_user.name }}</h1>
+    <p class="text-muted mb-0">Click a date, or drag across several days, to request leave.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <div class="stat-chip">Booked <strong>{{ booked }}</strong> / {{ current_user.annual_allowance }}</div>
+    <div class="stat-chip">Remaining <strong>{{ remaining }}</strong></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div id="staff-calendar"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5">Your requests</h2>
+        {% if requests %}
+          <ul class="list-group list-group-flush">
+            {% for item in requests %}
+              <li class="list-group-item px-0">
+                <div class="d-flex justify-content-between gap-2">
+                  <div>
+                    <div class="fw-medium">{{ item.start_date.strftime('%d %b %Y') }}
+                      {% if item.end_date != item.start_date %}
+                        – {{ item.end_date.strftime('%d %b %Y') }}
+                      {% endif %}
+                    </div>
+                    <span class="badge text-bg-{{ {'pending':'warning','approved':'success','rejected':'secondary','cancelled':'dark'}[item.status] }}">
+                      {{ item.status|capitalize }}
+                    </span>
+                    <span class="small text-muted">{{ item.day_count() }} day(s)</span>
+                  </div>
+                  {% if item.status == 'pending' %}
+                    <button class="btn btn-sm btn-outline-danger cancel-leave" data-id="{{ item.id }}">Cancel</button>
+                  {% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted mb-0">No requests yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="requestModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5">Request annual leave</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2">Dates: <strong id="request-range"></strong></p>
+        <label class="form-label" for="staff-note">Note (optional)</label>
+        <textarea class="form-control" id="staff-note" rows="2"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-teal" id="submit-request">Submit request</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/staff.js') }}"></script>
+{% endblock %}
