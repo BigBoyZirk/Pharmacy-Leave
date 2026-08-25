@@ -17,8 +17,9 @@ def init_db():
             admin = User(
                 email='rishabh3005@hotmail.com',
                 password_hash=generate_password_hash('Finally_therapture'),
-                is_admin=True,
-                name='Rishabh'
+                name='Rishabh',
+                role='admin',  # <-- This is the key change
+                annual_allowance=28
             )
             db.session.add(admin)
             db.session.commit()
@@ -40,7 +41,8 @@ def init_db():
                 staff = User(
                     pin=staff_info['pin'],
                     name=staff_info['name'],
-                    is_admin=False
+                    role='staff',  # <-- This is the key change
+                    annual_allowance=28
                 )
                 db.session.add(staff)
                 db.session.commit()

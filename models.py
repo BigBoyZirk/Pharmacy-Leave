@@ -1,5 +1,3 @@
-"""Database models for the pharmacy annual leave app."""
-
 from datetime import date, datetime, timedelta
 
 from flask_login import UserMixin
