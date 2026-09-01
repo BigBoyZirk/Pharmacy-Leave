@@ -39,6 +39,11 @@
                       {{ item.status|capitalize }}
                     </span>
                     <span class="small text-muted">{{ item.day_count() }} day(s)</span>
+                    <!-- Admin note display -->
+                    {% if item.admin_note %}
+                      <div class="small text-muted mt-1">📝 Admin note: {{ item.admin_note }}</div>
+                    {% endif %}
+                    <!-- End admin note display -->
                   </div>
                   {% if item.status == 'pending' %}
                     <button class="btn btn-sm btn-outline-danger cancel-leave" data-id="{{ item.id }}">Cancel</button>
