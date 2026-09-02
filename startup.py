@@ -28,7 +28,7 @@ def init_db():
             print("ℹ️ President account already exists.")
         
         # ============================================
-        # 2. CREATE DAD'S PHARMACY
+        # 2. CREATE DAD'S PHARMACY (CHECK FIRST)
         # ============================================
         pharmacy = Pharmacy.query.filter_by(name="Dad's Pharmacy").first()
         if not pharmacy:
