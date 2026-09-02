@@ -30,7 +30,6 @@ def init_db():
         # ============================================
         # 2. CREATE/RENAME TETTENHALL WOOD PHARMACY
         # ============================================
-        # First, check if the old name exists and rename it
         old_pharmacy = Pharmacy.query.filter_by(name="Dad's Pharmacy").first()
         if old_pharmacy:
             old_pharmacy.name = "Tettenhall Wood Pharmacy"
@@ -38,7 +37,6 @@ def init_db():
             print("✅ Renamed 'Dad's Pharmacy' to 'Tettenhall Wood Pharmacy'")
             pharmacy = old_pharmacy
         else:
-            # If it doesn't exist, create it with the new name
             pharmacy = Pharmacy.query.filter_by(name="Tettenhall Wood Pharmacy").first()
             if not pharmacy:
                 print("Creating Tettenhall Wood Pharmacy...")
@@ -71,36 +69,18 @@ def init_db():
             print("ℹ️ Dad's admin account already exists.")
         
         # ============================================
-        # 4. CREATE DEMO STAFF (Belongs to Tettenhall Wood Pharmacy)
+        # 4. REMOVE DEMO STAFF (If they exist)
         # ============================================
-        staff_data = [
-            {'pin': '1001', 'name': 'Aisha Khan'},
-            {'pin': '1002', 'name': 'James Patel'},
-            {'pin': '1003', 'name': 'Mei Chen'},
-        ]
-        
-        for staff_info in staff_data:
-            # Check if staff with this PIN already exists in THIS pharmacy
-            existing_staff = User.query.filter_by(
-                pin=staff_info['pin'],
-                pharmacy_id=pharmacy.id
-            ).first()
-            
-            if not existing_staff:
-                print(f"Creating staff {staff_info['name']} (PIN: {staff_info['pin']})...")
-                staff = User(
-                    name=staff_info['name'],
-                    pin=staff_info['pin'],
-                    role='staff',
-                    pharmacy_id=pharmacy.id,
-                    is_active=True,
-                    annual_allowance=28
-                )
-                db.session.add(staff)
-                db.session.commit()
-                print(f"✅ Staff {staff_info['pin']} created!")
-            else:
-                print(f"ℹ️ Staff PIN {staff_info['pin']} already exists in this pharmacy.")
+        demo_pins = ['1001', '1002', '1003']
+        deleted = User.query.filter(
+            User.pin.in_(demo_pins),
+            User.pharmacy_id == pharmacy.id
+        ).delete(synchronize_session=False)
+        if deleted:
+            db.session.commit()
+            print(f"✅ Removed {deleted} demo staff members from {pharmacy.name}")
+        else:
+            print("ℹ️ No demo staff found to remove.")
         
         print("\n" + "="*50)
         print("🎉 DATABASE INITIALIZATION COMPLETE!")
@@ -117,11 +97,8 @@ def init_db():
         print("   Password: dadpassword123")
         print("   Role: pharmacy_admin (can only see Tettenhall Wood Pharmacy)")
         print("")
-        print("👥 STAFF (Demo):")
-        print("   Pharmacy: Tettenhall Wood Pharmacy")
-        print("   PIN 1001: Aisha Khan")
-        print("   PIN 1002: James Patel")
-        print("   PIN 1003: Mei Chen")
+        print("👥 STAFF:")
+        print("   No demo staff. Add staff via the admin dashboard.")
         print("="*50)
 
 if __name__ == "__main__":
