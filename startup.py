@@ -1,11 +1,11 @@
 from app import app, db, User
 from werkzeug.security import generate_password_hash
+import os
 
 def init_db():
     print("Starting database initialization...")
     
     with app.app_context():
-        # Create all tables
         print("Creating tables if they don't exist...")
         db.create_all()
         
@@ -18,7 +18,7 @@ def init_db():
                 email='rishabh3005@hotmail.com',
                 password_hash=generate_password_hash('Finally_therapture'),
                 name='Rishabh',
-                role='admin',  # <-- This is the key change
+                role='admin',
                 annual_allowance=28
             )
             db.session.add(admin)
@@ -27,7 +27,7 @@ def init_db():
         else:
             print("Admin already exists. Skipping creation.")
         
-        # Create demo staff if they don't exist
+        # Demo staff
         staff_data = [
             {'pin': '1001', 'name': 'Staff 1'},
             {'pin': '1002', 'name': 'Staff 2'},
@@ -41,7 +41,7 @@ def init_db():
                 staff = User(
                     pin=staff_info['pin'],
                     name=staff_info['name'],
-                    role='staff',  # <-- This is the key change
+                    role='staff',
                     annual_allowance=28
                 )
                 db.session.add(staff)
