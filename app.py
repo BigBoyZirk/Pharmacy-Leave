@@ -19,7 +19,7 @@ from flask_login import LoginManager, current_user, login_required, login_user, 
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from emailer import notify_admin_of_request, notify_staff_of_decision
-from models import STAFF_COLOURS, LeaveRequest, User, db
+from models import STAFF_COLOURS, LeaveRequest, User, Pharmacy, db
 
 load_dotenv()
 
