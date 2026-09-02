@@ -131,8 +131,8 @@ def seed_if_empty():
     )
     db.session.add(president)
     
-    # 2. Create Dad's Pharmacy
-    pharmacy = Pharmacy(name="Dad's Pharmacy")
+    # 2. Create Tettenhall Wood Pharmacy
+    pharmacy = Pharmacy(name="Tettenhall Wood Pharmacy")
     db.session.add(pharmacy)
     db.session.commit()  # Commit to get pharmacy.id
     
@@ -247,6 +247,21 @@ def register_routes(app):
         pharmacy = Pharmacy.query.get_or_404(pharmacy_id)
         staff = User.query.filter_by(pharmacy_id=pharmacy.id, role="staff", is_active=True).all()
         return render_template("view_pharmacy.html", pharmacy=pharmacy, staff=staff)
+
+    @app.route("/president/pharmacy/<int:pharmacy_id>/edit", methods=["GET", "POST"])
+    @president_required
+    def edit_pharmacy(pharmacy_id):
+        pharmacy = Pharmacy.query.get_or_404(pharmacy_id)
+        
+        if request.method == "POST":
+            new_name = request.form.get("name")
+            if new_name:
+                pharmacy.name = new_name
+                db.session.commit()
+                flash(f"Pharmacy renamed to '{new_name}'!", "success")
+                return redirect(url_for("president_dashboard"))
+        
+        return render_template("edit_pharmacy.html", pharmacy=pharmacy)
 
     # ==================== PHARMACY ADMIN ROUTES ====================
     @app.route("/admin")

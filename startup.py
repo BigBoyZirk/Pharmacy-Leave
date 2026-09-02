@@ -28,17 +28,26 @@ def init_db():
             print("ℹ️ President account already exists.")
         
         # ============================================
-        # 2. CREATE DAD'S PHARMACY (CHECK FIRST)
+        # 2. CREATE/RENAME TETTENHALL WOOD PHARMACY
         # ============================================
-        pharmacy = Pharmacy.query.filter_by(name="Dad's Pharmacy").first()
-        if not pharmacy:
-            print("Creating Dad's Pharmacy...")
-            pharmacy = Pharmacy(name="Dad's Pharmacy")
-            db.session.add(pharmacy)
+        # First, check if the old name exists and rename it
+        old_pharmacy = Pharmacy.query.filter_by(name="Dad's Pharmacy").first()
+        if old_pharmacy:
+            old_pharmacy.name = "Tettenhall Wood Pharmacy"
             db.session.commit()
-            print("✅ Pharmacy created!")
+            print("✅ Renamed 'Dad's Pharmacy' to 'Tettenhall Wood Pharmacy'")
+            pharmacy = old_pharmacy
         else:
-            print("ℹ️ Dad's Pharmacy already exists.")
+            # If it doesn't exist, create it with the new name
+            pharmacy = Pharmacy.query.filter_by(name="Tettenhall Wood Pharmacy").first()
+            if not pharmacy:
+                print("Creating Tettenhall Wood Pharmacy...")
+                pharmacy = Pharmacy(name="Tettenhall Wood Pharmacy")
+                db.session.add(pharmacy)
+                db.session.commit()
+                print("✅ Pharmacy created!")
+            else:
+                print("ℹ️ Tettenhall Wood Pharmacy already exists.")
         
         # ============================================
         # 3. CREATE DAD AS PHARMACY ADMIN
@@ -62,7 +71,7 @@ def init_db():
             print("ℹ️ Dad's admin account already exists.")
         
         # ============================================
-        # 4. CREATE DEMO STAFF (Belongs to Dad's Pharmacy)
+        # 4. CREATE DEMO STAFF (Belongs to Tettenhall Wood Pharmacy)
         # ============================================
         staff_data = [
             {'pin': '1001', 'name': 'Aisha Khan'},
@@ -106,10 +115,10 @@ def init_db():
         print("🏪 PHARMACY ADMIN (Dad):")
         print("   Email: dad@pharmacy.com")
         print("   Password: dadpassword123")
-        print("   Role: pharmacy_admin (can only see Dad's Pharmacy)")
+        print("   Role: pharmacy_admin (can only see Tettenhall Wood Pharmacy)")
         print("")
         print("👥 STAFF (Demo):")
-        print("   Pharmacy: Dad's Pharmacy")
+        print("   Pharmacy: Tettenhall Wood Pharmacy")
         print("   PIN 1001: Aisha Khan")
         print("   PIN 1002: James Patel")
         print("   PIN 1003: Mei Chen")
