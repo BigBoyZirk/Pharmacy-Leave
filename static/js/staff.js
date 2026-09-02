@@ -26,7 +26,16 @@ document.addEventListener("DOMContentLoaded", () => {
     selectable: true,
     selectMirror: true,
     height: "auto",
+    
+    // ===== TOUCH SUPPORT FIXES =====
+    dragScroll: false,           // Prevents page scroll when dragging on touch
+    selectLongPressDelay: 100,   // How long to hold before selecting on touch (ms)
+    eventLongPressDelay: 100,    // How long to hold before event drag on touch
+    longPressDelay: 100,         // General long-press delay
+    selectMinDistance: 5,        // Minimum drag distance to count as a selection
+    
     events: "/api/my-leave",
+    
     select(info) {
       pendingStart = info.startStr;
       pendingEnd = exclusiveEndToInclusive(info.endStr);
@@ -36,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
       calendar.unselect();
     },
   });
+  
   calendar.render();
 
   document.getElementById("submit-request").addEventListener("click", async () => {
