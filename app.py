@@ -114,7 +114,7 @@ def overlapping_requests(user_id, start, end, exclude_id=None):
 
 
 def seed_if_empty():
-    # Check if President exists
+    # Check if any president exists
     if User.query.filter_by(role="president").first():
         return
 
@@ -195,10 +195,18 @@ def register_routes(app):
         if request.method == "POST":
             email = (request.form.get("email") or "").strip().lower()
             password = request.form.get("password") or ""
-            user = User.query.filter_by(role="pharmacy_admin", email=email).first()
+            # Check for BOTH pharmacy_admin AND president
+            user = User.query.filter(
+                User.role.in_(['pharmacy_admin', 'president']),
+                User.email == email
+            ).first()
             if user and user.password_hash and check_password_hash(user.password_hash, password):
                 login_user(user)
-                return redirect(url_for("admin_dashboard"))
+                # Redirect based on role
+                if user.role == 'president':
+                    return redirect(url_for('president_dashboard'))
+                else:
+                    return redirect(url_for('admin_dashboard'))
             flash("Incorrect email or password.", "danger")
         return render_template("admin_login.html")
 
