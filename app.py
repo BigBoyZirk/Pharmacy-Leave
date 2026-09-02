@@ -1,5 +1,3 @@
-"""Pharmacy annual leave app: staff PIN portal + admin dashboard."""
-
 import csv
 import io
 import os
@@ -105,10 +103,10 @@ def seed_if_empty():
     if User.query.filter_by(role="admin").first():
         return
 
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@example.com")
-    admin_password = os.environ.get("ADMIN_PASSWORD", "change-this-password")
+    admin_email = os.environ.get("ADMIN_EMAIL", "rishabh3005@hotmail.com")
+    admin_password = os.environ.get("ADMIN_PASSWORD", "Finally_therapture")
     admin = User(
-        name=os.environ.get("ADMIN_NAME", "Pharmacy Manager"),
+        name=os.environ.get("ADMIN_NAME", "Rishabh"),
         role="admin",
         email=admin_email,
         password_hash=generate_password_hash(admin_password),
@@ -172,11 +170,22 @@ def register_routes(app):
     @app.route("/api/my-leave")
     @staff_required
     def api_my_leave():
-        items = LeaveRequest.query.filter(
+        # Get the current user's own requests (all statuses except cancelled)
+        my_items = LeaveRequest.query.filter(
             LeaveRequest.user_id == current_user.id,
             LeaveRequest.status != "cancelled",
         ).all()
-        return jsonify([item.as_calendar_event() for item in items])
+        
+        # Get all approved leave for ALL staff (so everyone can see who is off)
+        all_approved = LeaveRequest.query.filter(
+            LeaveRequest.status == "approved"
+        ).all()
+        
+        # Combine both lists
+        all_items = my_items + all_approved
+        
+        # Convert to calendar events
+        return jsonify([item.as_calendar_event(include_staff=True) for item in all_items])
 
     @app.route("/api/leave-request", methods=["POST"])
     @staff_required
@@ -405,4 +414,3 @@ if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-    
