@@ -1,3 +1,5 @@
+"""Database models for the pharmacy annual leave app."""
+
 from datetime import date, datetime, timedelta
 
 from flask_login import UserMixin
@@ -19,17 +21,31 @@ STAFF_COLOURS = [
 ]
 
 
+class Pharmacy(db.Model):
+    """A pharmacy that uses the system. Each pharmacy has its own staff and leave data."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship to users
+    users = db.relationship('User', backref='pharmacy', lazy=True)
+
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default="staff")  # staff | admin
-    pin = db.Column(db.String(4), unique=True, nullable=True)  # staff login
-    email = db.Column(db.String(120), unique=True, nullable=True)
-    password_hash = db.Column(db.String(255), nullable=True)  # admin login
+    role = db.Column(db.String(20), nullable=False, default="staff")  # president | pharmacy_admin | staff
+    pin = db.Column(db.String(4), unique=False, nullable=True)  # staff login (only unique within a pharmacy)
+    email = db.Column(db.String(120), unique=True, nullable=True)  # admin/president login
+    password_hash = db.Column(db.String(255), nullable=True)  # admin/president login
     annual_allowance = db.Column(db.Integer, nullable=False, default=28)
     colour = db.Column(db.String(7), nullable=False, default="#2563eb")
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Foreign key to Pharmacy
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacy.id'), nullable=True)
+    # Note: pharmacy_id is nullable=True so President account doesn't need to belong to a pharmacy
 
     leave_requests = db.relationship(
         "LeaveRequest",
