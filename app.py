@@ -136,12 +136,12 @@ def seed_if_empty():
     db.session.add(pharmacy)
     db.session.commit()  # Commit to get pharmacy.id
     
-    # 3. Create Dad's Pharmacy Admin
+    # 3. Create Vinayak Khanna as Pharmacy Admin
     dad_admin = User(
-        name="Dad",
+        name="Vinayak Khanna",
         role="pharmacy_admin",
-        email="dad@pharmacy.com",
-        password_hash=generate_password_hash("dadpassword123"),
+        email="vinayakkhanna@yahoo.co.uk",
+        password_hash=generate_password_hash("Ugarte_Ballondor"),
         pharmacy_id=pharmacy.id,
         is_active=True,
         annual_allowance=0
@@ -336,6 +336,27 @@ def register_routes(app):
         db.session.add(member)
         db.session.commit()
         flash(f"{name} added. Their PIN is {pin}.", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    @app.route("/admin/staff/<int:staff_id>/delete", methods=["POST"])
+    @pharmacy_admin_required
+    def admin_delete_staff(staff_id):
+        staff = User.query.get_or_404(staff_id)
+        
+        # Security check: ensure this staff belongs to the admin's pharmacy
+        if staff.pharmacy_id != current_user.pharmacy_id:
+            flash("Unauthorized.", "danger")
+            return redirect(url_for("admin_dashboard"))
+        
+        # Prevent deleting yourself
+        if staff.id == current_user.id:
+            flash("You cannot delete yourself.", "danger")
+            return redirect(url_for("admin_dashboard"))
+        
+        name = staff.name
+        db.session.delete(staff)
+        db.session.commit()
+        flash(f"{name} has been removed from the pharmacy.", "success")
         return redirect(url_for("admin_dashboard"))
 
     # ==================== STAFF ROUTES ====================
