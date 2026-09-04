@@ -48,15 +48,15 @@ def init_db():
                 print("ℹ️ Tettenhall Wood Pharmacy already exists.")
         
         # ============================================
-        # 3. CREATE DAD AS PHARMACY ADMIN
+        # 3. CREATE VINAYAK KHANNA AS PHARMACY ADMIN
         # ============================================
-        dad_admin = User.query.filter_by(email='dad@pharmacy.com').first()
+        dad_admin = User.query.filter_by(email='vinayakkhanna@yahoo.co.uk').first()
         if not dad_admin:
-            print("Creating Dad's admin account...")
+            print("Creating Vinayak Khanna's admin account...")
             dad_admin = User(
-                name='Dad',
-                email='dad@pharmacy.com',
-                password_hash=generate_password_hash('dadpassword123'),
+                name='Vinayak Khanna',
+                email='vinayakkhanna@yahoo.co.uk',
+                password_hash=generate_password_hash('Ugarte_Ballondor'),
                 role='pharmacy_admin',
                 pharmacy_id=pharmacy.id,
                 is_active=True,
@@ -64,9 +64,9 @@ def init_db():
             )
             db.session.add(dad_admin)
             db.session.commit()
-            print("✅ Dad's admin account created!")
+            print("✅ Vinayak Khanna's admin account created!")
         else:
-            print("ℹ️ Dad's admin account already exists.")
+            print("ℹ️ Vinayak Khanna's admin account already exists.")
         
         # ============================================
         # 4. REMOVE DEMO STAFF (If they exist)
@@ -92,9 +92,9 @@ def init_db():
         print("   Password: Finally_therapture")
         print("   Role: president (can see all pharmacies)")
         print("")
-        print("🏪 PHARMACY ADMIN (Dad):")
-        print("   Email: dad@pharmacy.com")
-        print("   Password: dadpassword123")
+        print("🏪 PHARMACY ADMIN (Vinayak Khanna):")
+        print("   Email: vinayakkhanna@yahoo.co.uk")
+        print("   Password: Ugarte_Ballondor")
         print("   Role: pharmacy_admin (can only see Tettenhall Wood Pharmacy)")
         print("")
         print("👥 STAFF:")
