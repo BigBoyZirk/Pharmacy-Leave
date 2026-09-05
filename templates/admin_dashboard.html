@@ -23,8 +23,8 @@
                 <input type="text" name="pin" class="form-control" maxlength="4" pattern="[0-9]{4}" required>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Email (optional)</label>
-                <input type="email" name="email" class="form-control">
+                <label class="form-label">Email (required for notifications)</label>
+                <input type="email" name="email" class="form-control" required>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Annual Allowance</label>
@@ -34,6 +34,14 @@
                 <button type="submit" class="btn btn-primary w-100">Add Staff</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ==================== ADMIN CALENDAR ==================== -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Team Leave Calendar</h2>
+        <div id="admin-calendar"></div>
     </div>
 </div>
 
@@ -79,7 +87,7 @@
 </div>
 
 <!-- ==================== PENDING REQUESTS ==================== -->
-<div class="card">
+<div class="card mb-4">
     <div class="card-body">
         <h2 class="h5 mb-3">Pending Leave Requests</h2>
         {% if pending %}
@@ -144,8 +152,26 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ==================== CALENDAR ====================
+    var calendarEl = document.getElementById('admin-calendar');
+    if (calendarEl) {
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth'
+            },
+            events: '/api/admin/leave',
+            height: 'auto'
+        });
+        calendar.render();
+    }
+
+    // ==================== APPROVE/REJECT MODAL ====================
     const modal = new bootstrap.Modal(document.getElementById('decisionModal'));
     const leaveIdInput = document.getElementById('decisionLeaveId');
     const actionInput = document.getElementById('decisionAction');
