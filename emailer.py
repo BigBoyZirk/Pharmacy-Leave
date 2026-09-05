@@ -32,7 +32,7 @@ def send_email(to_address, subject, body):
     password = os.environ.get("MAIL_PASSWORD", "")
 
     try:
-        with smtplib.SMTP(host, port, timeout=20) as smtp:
+        with smtplib.SMTP(host, port, timeout=30) as smtp:  # Increased timeout
             if use_tls:
                 smtp.starttls()
             smtp.login(username, password)

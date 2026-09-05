@@ -27,12 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
     selectMirror: true,
     height: "auto",
     
-    // ===== TOUCH SUPPORT FIXES =====
-    dragScroll: false,           // Prevents page scroll when dragging on touch
-    selectLongPressDelay: 100,   // How long to hold before selecting on touch (ms)
-    eventLongPressDelay: 100,    // How long to hold before event drag on touch
-    longPressDelay: 100,         // General long-press delay
-    selectMinDistance: 5,        // Minimum drag distance to count as a selection
+    // Touch support for mobile
+    dragScroll: false,
+    selectLongPressDelay: 100,
+    eventLongPressDelay: 100,
+    longPressDelay: 100,
+    selectMinDistance: 5,
     
     events: "/api/my-leave",
     
@@ -48,27 +48,49 @@ document.addEventListener("DOMContentLoaded", () => {
   
   calendar.render();
 
-  document.getElementById("submit-request").addEventListener("click", async () => {
+  // ==================== SUBMIT LEAVE REQUEST ====================
+  document.getElementById("submit-request").addEventListener("click", async function() {
+    // Disable button to prevent double-click
+    this.disabled = true;
+    this.textContent = "Submitting...";
+    
     const note = document.getElementById("staff-note").value;
-    const res = await fetch("/api/leave-request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ start: pendingStart, end: pendingEnd, note }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      alert(data.error || "Could not submit request.");
-      return;
+    
+    try {
+      const res = await fetch("/api/leave-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ start: pendingStart, end: pendingEnd, note }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        alert(data.error || "Could not submit request.");
+        this.disabled = false;
+        this.textContent = "Submit request";
+        return;
+      }
+      
+      modal.hide();
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred. Please try again.');
+      this.disabled = false;
+      this.textContent = "Submit request";
     }
-    modal.hide();
-    window.location.reload();
   });
 
+  // ==================== CANCEL LEAVE REQUEST ====================
   document.querySelectorAll(".cancel-leave").forEach((btn) => {
     btn.addEventListener("click", async () => {
       if (!confirm("Cancel this pending request?")) return;
+      
       const res = await fetch(`/api/leave/${btn.dataset.id}/cancel`, { method: "POST" });
       const data = await res.json();
+      
       if (!res.ok) {
         alert(data.error || "Could not cancel.");
         return;

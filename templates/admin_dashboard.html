@@ -192,6 +192,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const action = actionInput.value;
         const note = noteInput.value;
 
+        // Disable button to prevent double-click
+        this.disabled = true;
+        this.textContent = 'Processing...';
+
         fetch('/api/admin/leave/' + leaveId + '/decide', {
             method: 'POST',
             headers: {
@@ -202,17 +206,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 note: note
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                location.reload();
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || 'Server error') });
             }
+            return response.json();
+        })
+        .then(data => {
+            modal.hide();
+            window.location.reload();
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            alert('Error: ' + error.message);
+            this.disabled = false;
+            this.textContent = 'Confirm';
         });
     });
 });
