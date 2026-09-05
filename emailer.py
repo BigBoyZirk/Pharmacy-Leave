@@ -1,4 +1,4 @@
-"""Send leave notification emails via SMTP. Missing config is skipped, not fatal."""
+"""Send leave notification emails via SMTP."""
 
 import os
 import smtplib
@@ -7,38 +7,29 @@ from email.message import EmailMessage
 from flask import current_app
 
 
-def _smtp_ready():
-    # Force it to be ready for testing
-    return True
-
-
 def send_email(to_address, subject, body):
+    """Send an email using the configured SMTP server."""
     if not to_address:
-        print("❌ No email address provided.")
+        current_app.logger.warning("No email address provided.")
         return False
-
-    print(f"📧 Attempting to send email to: {to_address}")
-    print(f"📧 Subject: {subject}")
-
+    
+    # Check if SMTP is configured
+    if not os.environ.get("MAIL_SERVER") or not os.environ.get("MAIL_USERNAME"):
+        current_app.logger.warning("SMTP not configured. Skipping email to %s", to_address)
+        return False
+    
     msg = EmailMessage()
     sender = os.environ.get("MAIL_DEFAULT_SENDER") or os.environ.get("MAIL_USERNAME")
-    
-    # TEMPORARY HARDCODE FOR TESTING - REMOVE THIS LATER
-    # If environment variables are missing, use these hardcoded values
-    host = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
-    port = int(os.environ.get("MAIL_PORT", "587"))
-    use_tls = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"
-    username = os.environ.get("MAIL_USERNAME", "pharmacy.leave.app@gmail.com")
-    password = os.environ.get("MAIL_PASSWORD", "fbia kekc turj ewmb")
-    
-    print(f"📧 Using SMTP server: {host}:{port}")
-    print(f"📧 Using username: {username}")
-    print(f"📧 Password set: {'Yes' if password else 'No'}")
-    
     msg["From"] = sender
     msg["To"] = to_address
     msg["Subject"] = subject
     msg.set_content(body)
+
+    host = os.environ["MAIL_SERVER"]
+    port = int(os.environ.get("MAIL_PORT", "587"))
+    use_tls = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"
+    username = os.environ.get("MAIL_USERNAME")
+    password = os.environ.get("MAIL_PASSWORD", "")
 
     try:
         with smtplib.SMTP(host, port, timeout=20) as smtp:
@@ -46,10 +37,10 @@ def send_email(to_address, subject, body):
                 smtp.starttls()
             smtp.login(username, password)
             smtp.send_message(msg)
-        print(f"✅ Email sent successfully to {to_address}")
+        current_app.logger.info("✅ Email sent to %s: %s", to_address, subject)
         return True
     except Exception as exc:
-        print(f"❌ Email FAILED: {exc}")
+        current_app.logger.warning("Email failed to %s: %s", to_address, exc)
         return False
 
 
@@ -57,14 +48,13 @@ def notify_admin_of_request(leave_request, staff):
     """Notify the pharmacy admin when a staff member requests leave."""
     from models import User
     
-    # Look up the admin for this staff member's pharmacy
     admin = User.query.filter_by(
         pharmacy_id=staff.pharmacy_id,
         role="pharmacy_admin"
     ).first()
     
     if not admin or not admin.email:
-        print(f"❌ No admin email found for pharmacy {staff.pharmacy_id}")
+        current_app.logger.warning("No admin email found for pharmacy %s", staff.pharmacy_id)
         return False
     
     subject = f"Leave request from {staff.name}"
@@ -77,14 +67,13 @@ def notify_admin_of_request(leave_request, staff):
         f"https://pharmacy-leave.onrender.com/admin"
     )
     
-    print(f"📧 Notifying admin: {admin.email}")
     return send_email(admin.email, subject, body)
 
 
 def notify_staff_of_decision(leave_request, staff):
     """Notify the staff member when their request is approved or rejected."""
     if not staff.email:
-        print(f"❌ No email for staff {staff.name}")
+        current_app.logger.warning("No email for staff %s", staff.name)
         return False
     
     subject = f"Your leave request was {leave_request.status}"
@@ -96,5 +85,4 @@ def notify_staff_of_decision(leave_request, staff):
         "View your requests: https://pharmacy-leave.onrender.com/portal"
     )
     
-    print(f"📧 Notifying staff: {staff.email}")
     return send_email(staff.email, subject, body)
