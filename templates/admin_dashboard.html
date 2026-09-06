@@ -27,8 +27,9 @@
                 <input type="email" name="email" class="form-control" required>
             </div>
             <div class="col-md-2">
-                <label class="form-label">Annual Allowance</label>
-                <input type="number" name="annual_allowance" class="form-control" value="28" min="1">
+                <label class="form-label">Annual Hours</label>
+                <input type="number" step="0.5" name="annual_allowance" class="form-control" value="210" min="0">
+                <small class="text-muted">e.g., 210 for 28 days × 7.5hrs</small>
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">Add Staff</button>
@@ -57,8 +58,8 @@
                         <th>Name</th>
                         <th>PIN</th>
                         <th>Email</th>
-                        <th>Booked</th>
-                        <th>Remaining</th>
+                        <th>Booked (hrs)</th>
+                        <th>Remaining (hrs)</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -68,8 +69,8 @@
                         <td>{{ member.name }}</td>
                         <td>{{ member.pin }}</td>
                         <td>{{ member.email or '—' }}</td>
-                        <td>{{ member.booked_days(year) }}</td>
-                        <td>{{ member.remaining_days(year) }}</td>
+                        <td>{{ member.booked_hours(year)|round(1) }}</td>
+                        <td>{{ member.remaining_hours(year)|round(1) }}</td>
                         <td>
                             <form method="POST" action="{{ url_for('admin_delete_staff', staff_id=member.id) }}" onsubmit="return confirm('Are you sure you want to delete {{ member.name }}? This cannot be undone.');">
                                 <button type="submit" class="btn btn-sm btn-danger">Delete</button>
@@ -97,7 +98,8 @@
                     <tr>
                         <th>Staff</th>
                         <th>Dates</th>
-                        <th>Days</th>
+                        <th>Time</th>
+                        <th>Hours</th>
                         <th>Note</th>
                         <th>Actions</th>
                     </tr>
@@ -107,7 +109,10 @@
                     <tr>
                         <td>{{ req.user.name }}</td>
                         <td>{{ req.start_date.strftime('%d/%m/%Y') }} - {{ req.end_date.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ req.day_count() }}</td>
+                        <td>{{ req.start_time }}–{{ req.end_time }}</td>
+                        <td>{{ req.calculate_hours()|round(1) }} / day<br>
+                            <small class="text-muted">Total: {{ req.total_hours()|round(1) }}</small>
+                        </td>
                         <td>{{ req.staff_note or '—' }}</td>
                         <td>
                             <button class="btn btn-sm btn-success approve-btn" data-id="{{ req.id }}">Approve</button>

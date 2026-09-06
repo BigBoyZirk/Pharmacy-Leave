@@ -7,8 +7,8 @@
     <p class="text-muted mb-0">Click a date, or drag across several days, to request leave.</p>
   </div>
   <div class="d-flex gap-2">
-    <div class="stat-chip">Booked <strong>{{ booked }}</strong> / {{ current_user.annual_allowance }}</div>
-    <div class="stat-chip">Remaining <strong>{{ remaining }}</strong></div>
+    <div class="stat-chip">Booked <strong>{{ booked_hours|round(1) }}</strong> / {{ current_user.annual_allowance|round(1) }} hrs</div>
+    <div class="stat-chip">Remaining <strong>{{ remaining_hours|round(1) }}</strong> hrs</div>
   </div>
 </div>
 
@@ -35,15 +35,19 @@
                         – {{ item.end_date.strftime('%d %b %Y') }}
                       {% endif %}
                     </div>
+                    <div class="small text-muted">
+                      {{ item.start_time }}–{{ item.end_time }} ({{ item.calculate_hours()|round(1) }} hrs/day)
+                      {% if item.day_count() > 1 %}
+                        • {{ item.total_hours()|round(1) }} hrs total
+                      {% endif %}
+                    </div>
                     <span class="badge text-bg-{{ {'pending':'warning','approved':'success','rejected':'secondary','cancelled':'dark'}[item.status] }}">
                       {{ item.status|capitalize }}
                     </span>
-                    <span class="small text-muted">{{ item.day_count() }} day(s)</span>
                     <!-- Admin note display -->
                     {% if item.admin_note %}
                       <div class="small text-muted mt-1">📝 Admin note: {{ item.admin_note }}</div>
                     {% endif %}
-                    <!-- End admin note display -->
                   </div>
                   {% if item.status == 'pending' %}
                     <button class="btn btn-sm btn-outline-danger cancel-leave" data-id="{{ item.id }}">Cancel</button>
@@ -60,6 +64,7 @@
   </div>
 </div>
 
+<!-- ==================== MODAL FOR REQUESTING LEAVE ==================== -->
 <div class="modal fade" id="requestModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -69,7 +74,31 @@
       </div>
       <div class="modal-body">
         <p class="mb-2">Dates: <strong id="request-range"></strong></p>
-        <label class="form-label" for="staff-note">Note (optional)</label>
+        <p class="text-muted small" id="days-count"></p>
+        
+        <div class="row">
+          <div class="col-6">
+            <label class="form-label" for="start-time">Start Time</label>
+            <input type="time" class="form-control" id="start-time" value="09:00" step="900">
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="end-time">End Time</label>
+            <input type="time" class="form-control" id="end-time" value="17:00" step="900">
+          </div>
+        </div>
+        
+        <div class="mt-2 d-flex justify-content-between align-items-center">
+          <span class="text-muted" id="hours-preview">Hours per day: 8.0</span>
+          <span class="badge bg-secondary" id="total-hours-preview">Total: 8.0 hrs</span>
+        </div>
+        
+        <div class="mt-2">
+          <small class="text-muted" id="remaining-warning" style="display:none; color: #dc2626;">
+            ⚠️ This exceeds your remaining hours ({{ remaining_hours|round(1) }} hrs)
+          </small>
+        </div>
+        
+        <label class="form-label mt-3" for="staff-note">Note (optional)</label>
         <textarea class="form-control" id="staff-note" rows="2"></textarea>
       </div>
       <div class="modal-footer">
@@ -80,6 +109,7 @@
   </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/staff.js') }}"></script>
 {% endblock %}

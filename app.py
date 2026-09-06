@@ -148,11 +148,11 @@ def seed_if_empty():
     )
     db.session.add(dad_admin)
     
-    # 4. Create Demo Staff
+    # 4. Create Demo Staff (with hours)
     demo_staff = [
-        User(name="Aisha Khan", role="staff", pin="1001", pharmacy_id=pharmacy.id, is_active=True, annual_allowance=28, colour=STAFF_COLOURS[0]),
-        User(name="James Patel", role="staff", pin="1002", pharmacy_id=pharmacy.id, is_active=True, annual_allowance=28, colour=STAFF_COLOURS[1]),
-        User(name="Mei Chen", role="staff", pin="1003", pharmacy_id=pharmacy.id, is_active=True, annual_allowance=28, colour=STAFF_COLOURS[2]),
+        User(name="Aisha Khan", role="staff", pin="1001", pharmacy_id=pharmacy.id, is_active=True, annual_allowance=210.0, colour=STAFF_COLOURS[0]),
+        User(name="James Patel", role="staff", pin="1002", pharmacy_id=pharmacy.id, is_active=True, annual_allowance=210.0, colour=STAFF_COLOURS[1]),
+        User(name="Mei Chen", role="staff", pin="1003", pharmacy_id=pharmacy.id, is_active=True, annual_allowance=210.0, colour=STAFF_COLOURS[2]),
     ]
     db.session.add_all(demo_staff)
     db.session.commit()
@@ -286,8 +286,8 @@ def register_routes(app):
         overview = [
             {
                 "staff": member,
-                "booked": member.booked_days(year),
-                "remaining": member.remaining_days(year),
+                "booked": member.booked_hours(year),
+                "remaining": member.remaining_hours(year),
             }
             for member in staff
         ]
@@ -305,7 +305,7 @@ def register_routes(app):
         name = (request.form.get("name") or "").strip()
         pin = (request.form.get("pin") or "").strip()
         email = (request.form.get("email") or "").strip().lower() or None
-        allowance = request.form.get("annual_allowance") or "28"
+        allowance = request.form.get("annual_allowance") or "210.0"
         
         if not name or not pin.isdigit() or len(pin) != 4:
             flash("Name and a 4-digit PIN are required.", "danger")
@@ -319,9 +319,9 @@ def register_routes(app):
         used = {member.colour for member in User.query.filter_by(pharmacy_id=current_user.pharmacy_id, role="staff").all()}
         colour = next((c for c in STAFF_COLOURS if c not in used), STAFF_COLOURS[0])
         try:
-            allowance_int = int(allowance)
+            allowance_float = float(allowance)
         except ValueError:
-            allowance_int = 28
+            allowance_float = 210.0
             
         member = User(
             name=name,
@@ -329,7 +329,7 @@ def register_routes(app):
             pin=pin,
             email=email,
             pharmacy_id=current_user.pharmacy_id,
-            annual_allowance=allowance_int,
+            annual_allowance=allowance_float,
             colour=colour,
             is_active=True
         )
@@ -371,8 +371,8 @@ def register_routes(app):
         return render_template(
             "staff_dashboard.html",
             requests=requests,
-            booked=current_user.booked_days(),
-            remaining=current_user.remaining_days(),
+            booked_hours=current_user.booked_hours(),
+            remaining_hours=current_user.remaining_hours(),
         )
 
     # ==================== API ROUTES ====================
@@ -403,19 +403,40 @@ def register_routes(app):
         start = parse_iso_date(data.get("start"))
         end = parse_iso_date(data.get("end"))
         note = (data.get("note") or "").strip() or None
+        start_time = data.get("start_time", "09:00")
+        end_time = data.get("end_time", "17:00")
+        hours = float(data.get("hours", 8.0))
+        
         if not start or not end:
             return jsonify({"error": "Choose a start and end date."}), 400
         if end < start:
             return jsonify({"error": "End date cannot be before the start date."}), 400
         if overlapping_requests(current_user.id, start, end):
             return jsonify({"error": "Those dates overlap an existing request."}), 400
-
+        
+        # Validate times
+        if start_time >= end_time:
+            return jsonify({"error": "End time must be after start time."}), 400
+        
+        # Calculate days in the range
+        days = (end - start).days + 1
+        total_hours = days * hours
+        
+        # HARD LIMIT CHECK
+        remaining = current_user.remaining_hours()
+        if total_hours > remaining:
+            return jsonify({
+                "error": f"Limit reached. You have {remaining:.1f} hours remaining, but this request needs {total_hours:.1f} hours."
+            }), 400
+        
         leave = LeaveRequest(
             user_id=current_user.id,
             start_date=start,
             end_date=end,
             status="pending",
             staff_note=note,
+            start_time=start_time,
+            end_time=end_time
         )
         db.session.add(leave)
         db.session.commit()
@@ -482,6 +503,8 @@ def register_routes(app):
             user_id=user.id,
             start_date=start,
             end_date=end,
+            start_time=data.get("start_time", "09:00"),
+            end_time=data.get("end_time", "17:00"),
             status="approved",
             admin_note=(data.get("note") or "").strip() or "Added by admin",
         )
@@ -530,12 +553,15 @@ def register_routes(app):
                 "Staff",
                 "PIN",
                 "Email",
-                "Start",
-                "End",
-                "Days",
+                "Start Date",
+                "End Date",
+                "Start Time",
+                "End Time",
+                "Hours/Day",
+                "Total Hours",
                 "Status",
-                "Staff note",
-                "Admin note",
+                "Staff Note",
+                "Admin Note",
             ]
         )
         for item in rows:
@@ -546,7 +572,10 @@ def register_routes(app):
                     item.user.email or "",
                     item.start_date.isoformat(),
                     item.end_date.isoformat(),
-                    item.day_count(),
+                    item.start_time,
+                    item.end_time,
+                    item.calculate_hours(),
+                    item.total_hours(),
                     item.status,
                     item.staff_note or "",
                     item.admin_note or "",
