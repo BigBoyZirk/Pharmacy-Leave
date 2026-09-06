@@ -5,82 +5,56 @@ def init_db():
     print("Starting database initialization...")
     
     with app.app_context():
+        # ============================================
+        # FORCE RECREATE TABLES (TEMPORARY FIX)
+        # ============================================
+        print("Dropping all tables...")
+        db.drop_all()
+        print("Creating all tables...")
         db.create_all()
+        print("✅ Tables created with correct schema.")
         
         # ============================================
         # 1. CREATE YOUR PRESIDENT ACCOUNT
         # ============================================
-        president = User.query.filter_by(email='rishabh3005@hotmail.com').first()
-        if not president:
-            print("Creating President account (Rishabh)...")
-            president = User(
-                name='Rishabh',
-                email='rishabh3005@hotmail.com',
-                password_hash=generate_password_hash('Finally_therapture'),
-                role='president',
-                is_active=True,
-                annual_allowance=0
-            )
-            db.session.add(president)
-            db.session.commit()
-            print("✅ President account created!")
-        else:
-            print("ℹ️ President account already exists.")
+        print("Creating President account (Rishabh)...")
+        president = User(
+            name='Rishabh',
+            email='rishabh3005@hotmail.com',
+            password_hash=generate_password_hash('Finally_therapture'),
+            role='president',
+            is_active=True,
+            annual_allowance=0
+        )
+        db.session.add(president)
+        db.session.commit()
+        print("✅ President account created!")
         
         # ============================================
-        # 2. CREATE/RENAME TETTENHALL WOOD PHARMACY
+        # 2. CREATE TETTENHALL WOOD PHARMACY
         # ============================================
-        old_pharmacy = Pharmacy.query.filter_by(name="Dad's Pharmacy").first()
-        if old_pharmacy:
-            old_pharmacy.name = "Tettenhall Wood Pharmacy"
-            db.session.commit()
-            print("✅ Renamed 'Dad's Pharmacy' to 'Tettenhall Wood Pharmacy'")
-            pharmacy = old_pharmacy
-        else:
-            pharmacy = Pharmacy.query.filter_by(name="Tettenhall Wood Pharmacy").first()
-            if not pharmacy:
-                print("Creating Tettenhall Wood Pharmacy...")
-                pharmacy = Pharmacy(name="Tettenhall Wood Pharmacy")
-                db.session.add(pharmacy)
-                db.session.commit()
-                print("✅ Pharmacy created!")
-            else:
-                print("ℹ️ Tettenhall Wood Pharmacy already exists.")
+        print("Creating Tettenhall Wood Pharmacy...")
+        pharmacy = Pharmacy(name="Tettenhall Wood Pharmacy")
+        db.session.add(pharmacy)
+        db.session.commit()
+        print("✅ Pharmacy created!")
         
         # ============================================
         # 3. CREATE VINAYAK KHANNA AS PHARMACY ADMIN
         # ============================================
-        dad_admin = User.query.filter_by(email='vinayakkhanna@yahoo.co.uk').first()
-        if not dad_admin:
-            print("Creating Vinayak Khanna's admin account...")
-            dad_admin = User(
-                name='Vinayak Khanna',
-                email='vinayakkhanna@yahoo.co.uk',
-                password_hash=generate_password_hash('Ugarte_Ballondor'),
-                role='pharmacy_admin',
-                pharmacy_id=pharmacy.id,
-                is_active=True,
-                annual_allowance=0
-            )
-            db.session.add(dad_admin)
-            db.session.commit()
-            print("✅ Vinayak Khanna's admin account created!")
-        else:
-            print("ℹ️ Vinayak Khanna's admin account already exists.")
-        
-        # ============================================
-        # 4. REMOVE DEMO STAFF (If they exist)
-        # ============================================
-        demo_pins = ['1001', '1002', '1003']
-        deleted = User.query.filter(
-            User.pin.in_(demo_pins),
-            User.pharmacy_id == pharmacy.id
-        ).delete(synchronize_session=False)
-        if deleted:
-            db.session.commit()
-            print(f"✅ Removed {deleted} demo staff members from {pharmacy.name}")
-        else:
-            print("ℹ️ No demo staff found to remove.")
+        print("Creating Vinayak Khanna's admin account...")
+        dad_admin = User(
+            name='Vinayak Khanna',
+            email='vinayakkhanna@yahoo.co.uk',
+            password_hash=generate_password_hash('Ugarte_Ballondor'),
+            role='pharmacy_admin',
+            pharmacy_id=pharmacy.id,
+            is_active=True,
+            annual_allowance=0
+        )
+        db.session.add(dad_admin)
+        db.session.commit()
+        print("✅ Vinayak Khanna's admin account created!")
         
         print("\n" + "="*50)
         print("🎉 DATABASE INITIALIZATION COMPLETE!")
@@ -96,9 +70,6 @@ def init_db():
         print("   Email: vinayakkhanna@yahoo.co.uk")
         print("   Password: Ugarte_Ballondor")
         print("   Role: pharmacy_admin (can only see Tettenhall Wood Pharmacy)")
-        print("")
-        print("👥 STAFF:")
-        print("   No demo staff. Add staff via the admin dashboard.")
         print("="*50)
 
 if __name__ == "__main__":
